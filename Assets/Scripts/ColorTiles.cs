@@ -1,83 +1,94 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class ColorTiles : MonoBehaviour
 {
-    [SerializeField] private Vector2 mousePos;
-    private Camera cam;
+    [Header("General References")]
     [SerializeField] private Grid grid;
     [SerializeField] private GameObject tile;
     [SerializeField] private GameObject background;
     [SerializeField] private Transform backgroundParent;
+    [SerializeField] private Transform tilesParent;
+    [SerializeField] private GameObject playButton;
+    [SerializeField] private TMP_Text finalScoreText;
+    [SerializeField] private TMP_Text gameplayScoreText;
 
+
+    private Vector2 mousePos;
+    private Vector3Int mousePosGrid;
+
+    private Camera cam;
     private Vector3Int camMinGrid;
     private Vector3Int camMaxGrid;
-    [SerializeField] private Vector3Int mousePosGrid;
-
     private Vector2Int dimensions;
 
+    [Header("Tile Data")]
+    [SerializeField] private int tileCount = 200;
     public GameObject[,] tiles;
-    [SerializeField] private Transform tilesParent;
-
     [SerializeField] private Color[] colors;
 
     [Header("Timer stuff")]
-    [SerializeField] private Image bar;
+    [SerializeField] private Image progressBar;
     [SerializeField] private float startingTime = 100f;
     [SerializeField] private float misclickTimeLoss = 5f;
-    private float currentTime;
+    [SerializeField] private float currentTime;
     private bool doTimer;
 
-    [SerializeField] private GameObject playButton;
+
+    private int score = 0;
+
+
 
     // Start is called before the first frame update
     void Start()
     {
+        // Dimensions of game area
         cam = Camera.main;
-        camMinGrid = grid.WorldToCell(cam.ViewportToWorldPoint(new Vector2(0, 0))) + new Vector3Int(1, 0, 0);
-        camMaxGrid = grid.WorldToCell(cam.ViewportToWorldPoint(new Vector2(1, 1))) - new Vector3Int(1, 1, 0);
+
+        camMinGrid = grid.WorldToCell(cam.ViewportToWorldPoint(new Vector2(0, 0))) + new Vector3Int(2, 1, 0);
+        camMaxGrid = grid.WorldToCell(cam.ViewportToWorldPoint(new Vector2(1, 1))) - new Vector3Int(2, 2, 0);
         //print(camMinGrid + "    " + camMaxGrid);
 
         dimensions.x = camMaxGrid.x - camMinGrid.x + 1;
         dimensions.y = camMaxGrid.y - camMinGrid.y + 1;
+        //print(dimensions);
 
-        bool didPlace = false;
-        for (int x = 0; x < dimensions.x; x++)
+        // checkerboard background pattern
+        for (int x = -2; x <= dimensions.x + 1; x++)
         {
-            for (int y = 0; y < dimensions.y; y++)
+            for (int y = -1; y <= dimensions.y + 1; y++)
             {
-                if (!didPlace)
+                if ((x + y) % 2 == 0)
                 {
-                    print(x);
                     Instantiate(background,
                                 backgroundParent.TransformPoint(grid.CellToWorld(new Vector3Int(x + camMinGrid.x, y + camMinGrid.y, 0))),
                                 Quaternion.identity,
                                 backgroundParent);
-                    didPlace = true;
                 }
-                else didPlace = false;
             }
-            if (didPlace)
-                didPlace = false;
-            else didPlace = true;
         }
-        
+
+        currentTime = startingTime;
+        gameplayScoreText.text = score.ToString();
     }
 
     // Update is called once per frame
     void Update()
     {
         #region clickHandler
-        mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
-        mousePos.x = Mathf.Clamp(mousePos.x, camMinGrid.x, camMaxGrid.x);
-        mousePos.y = Mathf.Clamp(mousePos.y, camMinGrid.y, camMaxGrid.y);
-        mousePosGrid = grid.WorldToCell(mousePos);
-
-        //tile.position = mousePosGrid;
 
         if (Input.GetMouseButtonDown(0) && doTimer)
         {
+            // Convert mousePos to grid coordinates
+            mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
+            mousePos.x = Mathf.Clamp(mousePos.x, camMinGrid.x, camMaxGrid.x);
+            mousePos.y = Mathf.Clamp(mousePos.y, camMinGrid.y, camMaxGrid.y);
+            mousePosGrid = grid.WorldToCell(mousePos);
+
+            //tile.position = mousePosGrid;
+
             doTimer = true;
             //print("start");
             Vector2Int arrayPos = (Vector2Int)(mousePosGrid - camMinGrid);
@@ -85,7 +96,7 @@ public class ColorTiles : MonoBehaviour
             arrayPos.y = Mathf.Clamp(arrayPos.y, 0, dimensions.y + 1);
             if (tiles[arrayPos.x, arrayPos.y] != null)
             {
-                //print(tiles[arrayPos.x, arrayPos.y].GetComponent<TileData>().colorIndex);
+                //print($"clicked tile color: {tiles[arrayPos.x, arrayPos.y].GetComponent<TileData>().colorIndex}");
             }
             else
             {
@@ -97,33 +108,41 @@ public class ColorTiles : MonoBehaviour
         if (doTimer)
         {
             currentTime -= Time.deltaTime;
-            bar.fillAmount = currentTime / startingTime;
+            progressBar.fillAmount = currentTime / startingTime;
         }
 
         if (currentTime <= 0)
         {
             doTimer = false;
-            playButton.SetActive(false);
+            finalScoreText.gameObject.SetActive(true);
+            finalScoreText.text = $"Score\n{score}";
+            currentTime = startingTime;
         }
     }
 
 
     public void StartNewGame()
     {
-        while (tilesParent.childCount > 0)
-        {
-            Destroy(tilesParent.GetChild(0));
-        }
+        Destroy(tilesParent.gameObject);
+        tilesParent = new GameObject("tilesParent").transform;
+        tilesParent.transform.position = Vector2.zero;
 
         tiles = new GameObject[dimensions.x + 1, dimensions.y + 1];
         //print(dimensions.x + " " + dimensions.y);
+
+        int emptyCount = dimensions.x * dimensions.y - tileCount;
+        int currentTileCount = tileCount;
+
 
         for (int x = 0; x < dimensions.x; x++)
         {
             for (int y = 0; y < dimensions.y; y++)
             {
-                if (Random.value > 0.3f)
+                int roll = Random.Range(0, currentTileCount + emptyCount);
+
+                if (roll < currentTileCount)
                 {
+                    currentTileCount--;
                     GameObject instObj =
                         Instantiate(tile,
                                     grid.CellToWorld(new Vector3Int(x + camMinGrid.x, y + camMinGrid.y, 0)),
@@ -140,8 +159,14 @@ public class ColorTiles : MonoBehaviour
                     tiles[x, y] = instObj;
                     //print("done");
                 }
+                else
+                {
+                    emptyCount--;
+                }
             }
         }
+
+        //print($"Current tile count: {currentTileCount} targ: {tileCount}");
 
         currentTime = startingTime;
         doTimer = true;
@@ -211,11 +236,13 @@ public class ColorTiles : MonoBehaviour
                 tiles[tile.arrayPos.x, tile.arrayPos.y] = null;
                 Destroy(tile.tile, 1.25f);
                 hasClearedTiles = true;
+                score++;
+                gameplayScoreText.text = score.ToString();
             }
         }
         if (!hasClearedTiles)
         {
-            print("u stink!!!");
+            //print("u stink!!!");
             currentTime -= misclickTimeLoss;
         }
     }
