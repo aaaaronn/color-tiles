@@ -87,8 +87,8 @@ public class ColorTiles : MonoBehaviour
             mousePos.y = Mathf.Clamp(mousePos.y, camMinGrid.y, camMaxGrid.y);
             mousePosGrid = grid.WorldToCell(mousePos);
 
-            //tile.position = mousePosGrid;
-
+            
+            // Convert mouse grid coordinates to an array position
             doTimer = true;
             //print("start");
             Vector2Int arrayPos = (Vector2Int)(mousePosGrid - camMinGrid);
@@ -100,17 +100,20 @@ public class ColorTiles : MonoBehaviour
             }
             else
             {
+                // If didnt click on tile, check to see if proper click
                 EraseTiles(arrayPos);
             }
         }
         #endregion
 
+        // Game timer
         if (doTimer)
         {
             currentTime -= Time.deltaTime;
             progressBar.fillAmount = currentTime / startingTime;
         }
 
+        // Game end
         if (currentTime <= 0)
         {
             doTimer = false;
@@ -123,13 +126,16 @@ public class ColorTiles : MonoBehaviour
 
     public void StartNewGame()
     {
+        // Destroy all old tiles
         Destroy(tilesParent.gameObject);
         tilesParent = new GameObject("tilesParent").transform;
         tilesParent.transform.position = Vector2.zero;
 
+        // Reset tiles array
         tiles = new GameObject[dimensions.x + 1, dimensions.y + 1];
         //print(dimensions.x + " " + dimensions.y);
 
+        // Balanced random placement of tiles
         int emptyCount = dimensions.x * dimensions.y - tileCount;
         int currentTileCount = tileCount;
 
@@ -140,6 +146,7 @@ public class ColorTiles : MonoBehaviour
             {
                 int roll = Random.Range(0, currentTileCount + emptyCount);
 
+                // place tile and get random color for tile
                 if (roll < currentTileCount)
                 {
                     currentTileCount--;
@@ -167,12 +174,13 @@ public class ColorTiles : MonoBehaviour
         }
 
         //print($"Current tile count: {currentTileCount} targ: {tileCount}");
-
+        // Start timer
         currentTime = startingTime;
         doTimer = true;
         playButton.SetActive(false);
     }
 
+    // Struct for each tile storing the gameobject, position in array, and color
     struct GameTile
     {
         public int color;
@@ -189,14 +197,17 @@ public class ColorTiles : MonoBehaviour
 
     private GameTile CheckClick(Vector2Int pos, Vector2Int direction)
     {
+        // If checking outside array, return fake tile
         if (pos.x < 0 || pos.y < 0 || pos.x > dimensions.x || pos.y > dimensions.y)
         {
             return new GameTile(-1, null, Vector2Int.zero);
         }
+        // If checking a tile in array, return it
         if (tiles[pos.x, pos.y] != null)
         {
             return new GameTile(tiles[pos.x, pos.y].GetComponent<TileData>().colorIndex, tiles[pos.x, pos.y], new Vector2Int(pos.x, pos.y));
         }
+        // If no tile found, continue searching in direction
         else
         {
             return CheckClick(pos + direction, direction);
@@ -205,6 +216,7 @@ public class ColorTiles : MonoBehaviour
 
     private void EraseTiles(Vector2Int arrayPos)
     {
+        // Create a list of all horizontal/vertical checked tiles
         List<GameTile> cubes = new List<GameTile>() { CheckClick(arrayPos + new Vector2Int(-1, 0), new Vector2Int(-1, 0)),
                                                                         CheckClick(arrayPos + new Vector2Int(1, 0), new Vector2Int(1, 0)),
                                                                         CheckClick(arrayPos + new Vector2Int(0, 1), new Vector2Int(0, 1)),
@@ -212,6 +224,7 @@ public class ColorTiles : MonoBehaviour
 
         Dictionary<int, int> colors = new Dictionary<int, int>();
 
+        // Add to dictonary color index key
         for (int i = 0; i < cubes.Count; i++)
         {
             if (colors.ContainsKey(cubes[i].color))
@@ -225,6 +238,7 @@ public class ColorTiles : MonoBehaviour
         }
 
         bool hasClearedTiles = false;
+        // Play anim and delete tiles
         foreach (var tile in cubes)
         {
             if (colors.ContainsKey(tile.color) && colors[tile.color] > 1)
