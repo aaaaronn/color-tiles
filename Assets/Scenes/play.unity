@@ -1231,6 +1231,7 @@ MonoBehaviour:
   startingTime: 100
   misclickTimeLoss: 5
   currentTime: 0
+  ghostPrefab: {fileID: 3170786870680068, guid: e0340090e3b27aa469d7ef4eeea9d4f2, type: 3}
 --- !u!156049354 &1237112520
 Grid:
   m_ObjectHideFlags: 0

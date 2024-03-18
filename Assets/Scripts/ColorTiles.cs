@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static UnityEditor.PlayerSettings;
 
 public class ColorTiles : MonoBehaviour
 {
@@ -18,6 +19,7 @@ public class ColorTiles : MonoBehaviour
 
     private Vector2 mousePos;
     private Vector3Int mousePosGrid;
+    private Vector2Int arrayPos;
 
     private Camera cam;
     private Vector3Int camMinGrid;
@@ -27,6 +29,7 @@ public class ColorTiles : MonoBehaviour
     [Header("Tile Data")]
     [SerializeField] private int tileCount = 200;
     public GameObject[,] tiles;
+    private int[,] tileColors;
     [SerializeField] private Color[] colors;
 
     [Header("Timer stuff")]
@@ -39,6 +42,9 @@ public class ColorTiles : MonoBehaviour
 
     private int score = 0;
 
+
+    private List<GameObject> circles = new List<GameObject>();
+    [SerializeField] private GameObject ghostPrefab;
 
 
     // Start is called before the first frame update
@@ -91,7 +97,7 @@ public class ColorTiles : MonoBehaviour
             // Convert mouse grid coordinates to an array position
             doTimer = true;
             //print("start");
-            Vector2Int arrayPos = (Vector2Int)(mousePosGrid - camMinGrid);
+            arrayPos = (Vector2Int)(mousePosGrid - camMinGrid);
             arrayPos.x = Mathf.Clamp(arrayPos.x, 0, dimensions.x + 1);
             arrayPos.y = Mathf.Clamp(arrayPos.y, 0, dimensions.y + 1);
             if (tiles[arrayPos.x, arrayPos.y] != null)
@@ -161,7 +167,8 @@ public class ColorTiles : MonoBehaviour
                                                                instObj.transform.localScale.y * grid.cellSize.x, 1);
 
                     instObj.GetComponent<SpriteRenderer>().color = colors[randColorIndex];
-                    instObj.GetComponent<TileData>().colorIndex = randColorIndex;
+                    tileColors[x, y] = randColorIndex;
+                    //instObj.GetComponent<TileData>().colorIndex = randColorIndex;
                     //print(x + "  " + y);
                     tiles[x, y] = instObj;
                     //print("done");
@@ -195,17 +202,28 @@ public class ColorTiles : MonoBehaviour
         }
     }
 
-    private GameTile CheckClick(Vector2Int pos, Vector2Int direction)
+    private Vector2Int CheckClick(Vector2Int pos, Vector2Int direction)
     {
         // If checking outside array, return fake tile
         if (pos.x < 0 || pos.y < 0 || pos.x > dimensions.x || pos.y > dimensions.y)
         {
-            return new GameTile(-1, null, Vector2Int.zero);
+            return Vector2Int.left;
         }
         // If checking a tile in array, return it
         if (tiles[pos.x, pos.y] != null)
         {
-            return new GameTile(tiles[pos.x, pos.y].GetComponent<TileData>().colorIndex, tiles[pos.x, pos.y], new Vector2Int(pos.x, pos.y));
+            Vector2Int distTraveled = pos - arrayPos;
+            int distance = (distTraveled.x == 0) ? distTraveled.y : distTraveled.x;
+
+
+
+            for (int i = 0; i <  Mathf.Abs(distance); i++)
+            {
+                //print($"adding tiles for direction {direction}");
+                circles.Add(Instantiate(ghostPrefab, grid.CellToWorld((Vector3Int)pos + camMinGrid - (Vector3Int)direction * i), Quaternion.identity));
+            }
+            //return new GameTile(tiles[pos.x, pos.y].GetComponent<TileData>().colorIndex, tiles[pos.x, pos.y], new Vector2Int(pos.x, pos.y));
+            return new Vector2Int(pos.x, pos.y);
         }
         // If no tile found, continue searching in direction
         else
@@ -217,23 +235,25 @@ public class ColorTiles : MonoBehaviour
     private void EraseTiles(Vector2Int arrayPos)
     {
         // Create a list of all horizontal/vertical checked tiles
-        List<GameTile> cubes = new List<GameTile>() { CheckClick(arrayPos + new Vector2Int(-1, 0), new Vector2Int(-1, 0)),
-                                                                        CheckClick(arrayPos + new Vector2Int(1, 0), new Vector2Int(1, 0)),
-                                                                        CheckClick(arrayPos + new Vector2Int(0, 1), new Vector2Int(0, 1)),
-                                                                        CheckClick(arrayPos + new Vector2Int(0, -1), new Vector2Int(0, -1))};
+        List<Vector2Int> cubes = new List<Vector2Int>() { CheckClick(arrayPos + new Vector2Int(-1, 0), Vector2Int.left),
+                                                      CheckClick(arrayPos + new Vector2Int(1, 0), Vector2Int.right),
+                                                      CheckClick(arrayPos + new Vector2Int(0, 1), Vector2Int.up),
+                                                      CheckClick(arrayPos + new Vector2Int(0, -1), Vector2Int.down)};
 
         Dictionary<int, int> colors = new Dictionary<int, int>();
 
+        cubes.RemoveAll(x => x.x == -1);
+
         // Add to dictonary color index key
         for (int i = 0; i < cubes.Count; i++)
-        {
-            if (colors.ContainsKey(cubes[i].color))
+        {           
+            if (colors.ContainsKey(tileColors[cubes[i].x, cubes[i].y]))
             {
-                colors[cubes[i].color]++;
+                colors[tileColors[cubes[i].x, cubes[i].y]]++;
             }
             else
             {
-                colors.Add(cubes[i].color, 1);
+                colors.Add(tileColors[cubes[i].x, cubes[i].y], 1);
             }
         }
 
@@ -241,7 +261,7 @@ public class ColorTiles : MonoBehaviour
         // Play anim and delete tiles
         foreach (var tile in cubes)
         {
-            if (colors.ContainsKey(tile.color) && colors[tile.color] > 1)
+            /*if (colors.ContainsKey(tile.color) && colors[tile.color] > 1)
             {
                 tile.tile.GetComponent<SpriteRenderer>().sortingOrder = 1;
 
@@ -252,12 +272,16 @@ public class ColorTiles : MonoBehaviour
                 hasClearedTiles = true;
                 score++;
                 gameplayScoreText.text = score.ToString();
-            }
+            }*/
         }
         if (!hasClearedTiles)
         {
             //print("u stink!!!");
             currentTime -= misclickTimeLoss;
+        }
+        else
+        {
+            circles.Add(Instantiate(ghostPrefab, grid.CellToWorld((Vector3Int)arrayPos + camMinGrid), Quaternion.identity));
         }
     }
 }
