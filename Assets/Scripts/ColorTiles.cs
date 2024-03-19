@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -139,6 +140,7 @@ public class ColorTiles : MonoBehaviour
 
         // Reset tiles array
         tiles = new GameObject[dimensions.x + 1, dimensions.y + 1];
+        tileColors = new int[dimensions.x + 1, dimensions.y + 1];
         //print(dimensions.x + " " + dimensions.y);
 
         // Balanced random placement of tiles
@@ -212,17 +214,6 @@ public class ColorTiles : MonoBehaviour
         // If checking a tile in array, return it
         if (tiles[pos.x, pos.y] != null)
         {
-            Vector2Int distTraveled = pos - arrayPos;
-            int distance = (distTraveled.x == 0) ? distTraveled.y : distTraveled.x;
-
-
-
-            for (int i = 0; i <  Mathf.Abs(distance); i++)
-            {
-                //print($"adding tiles for direction {direction}");
-                circles.Add(Instantiate(ghostPrefab, grid.CellToWorld((Vector3Int)pos + camMinGrid - (Vector3Int)direction * i), Quaternion.identity));
-            }
-            //return new GameTile(tiles[pos.x, pos.y].GetComponent<TileData>().colorIndex, tiles[pos.x, pos.y], new Vector2Int(pos.x, pos.y));
             return new Vector2Int(pos.x, pos.y);
         }
         // If no tile found, continue searching in direction
@@ -234,19 +225,20 @@ public class ColorTiles : MonoBehaviour
 
     private void EraseTiles(Vector2Int arrayPos)
     {
-        // Create a list of all horizontal/vertical checked tiles
-        List<Vector2Int> cubes = new List<Vector2Int>() { CheckClick(arrayPos + new Vector2Int(-1, 0), Vector2Int.left),
-                                                      CheckClick(arrayPos + new Vector2Int(1, 0), Vector2Int.right),
-                                                      CheckClick(arrayPos + new Vector2Int(0, 1), Vector2Int.up),
-                                                      CheckClick(arrayPos + new Vector2Int(0, -1), Vector2Int.down)};
+        // Create a list of all horizontal/vertical checked tiles as array positions
+        List<Vector2Int> cubes = new List<Vector2Int>() {CheckClick(arrayPos + new Vector2Int(-1, 0), Vector2Int.left),
+                                                         CheckClick(arrayPos + new Vector2Int(1, 0), Vector2Int.right),
+                                                         CheckClick(arrayPos + new Vector2Int(0, 1), Vector2Int.up),
+                                                         CheckClick(arrayPos + new Vector2Int(0, -1), Vector2Int.down)};
+
+        // Remove fake tiles (array position cant be -1)
+        cubes.RemoveAll(x => x.x == -1);
 
         Dictionary<int, int> colors = new Dictionary<int, int>();
 
-        cubes.RemoveAll(x => x.x == -1);
-
-        // Add to dictonary color index key
+        // Add to dictionary for every color
         for (int i = 0; i < cubes.Count; i++)
-        {           
+        {
             if (colors.ContainsKey(tileColors[cubes[i].x, cubes[i].y]))
             {
                 colors[tileColors[cubes[i].x, cubes[i].y]]++;
@@ -257,23 +249,51 @@ public class ColorTiles : MonoBehaviour
             }
         }
 
-        bool hasClearedTiles = false;
-        // Play anim and delete tiles
-        foreach (var tile in cubes)
+
+        // Remove colors with no pair
+        List<int> removeColors = new List<int>();
+        foreach (var c in colors.Where(col => col.Value == 1))
         {
-            /*if (colors.ContainsKey(tile.color) && colors[tile.color] > 1)
+            removeColors.Add(c.Key);
+        }
+        foreach (var key in removeColors)
+        {
+            colors.Remove(key);
+        }
+
+        // Remove tiles that dont have a pair
+        cubes.RemoveAll(pos => removeColors.Contains(tileColors[pos.x, pos.y]));
+
+
+        // Play anim and delete tiles
+        bool hasClearedTiles = false;
+        foreach (var arrPos in cubes)
+        {
+            if (colors.ContainsKey(tileColors[arrPos.x, arrPos.y]))
             {
-                tile.tile.GetComponent<SpriteRenderer>().sortingOrder = 1;
+                GameObject tile = tiles[arrPos.x, arrPos.y];
 
-                tile.tile.GetComponent<Animator>().enabled = true;
+                tile.GetComponent<SpriteRenderer>().sortingOrder = 1;
 
-                tiles[tile.arrayPos.x, tile.arrayPos.y] = null;
-                Destroy(tile.tile, 1.25f);
-                hasClearedTiles = true;
+                if (Random.value > 0.5)
+                    tile.transform.localRotation = Quaternion.Euler(0, 180, 0);
+
+                Animator anim = tile.GetComponent<Animator>();
+
+                anim.enabled = true;
+                anim.SetInteger("randAnim", Random.Range(0, 2));
+
+
+                Destroy(tile, 1.25f);
+                tiles[arrPos.x, arrPos.y] = null;
+                
                 score++;
                 gameplayScoreText.text = score.ToString();
-            }*/
+
+                hasClearedTiles = true;
+            }
         }
+
         if (!hasClearedTiles)
         {
             //print("u stink!!!");
@@ -281,6 +301,26 @@ public class ColorTiles : MonoBehaviour
         }
         else
         {
+            // For each tile found create a path of circles to it
+            foreach (var pos in cubes)
+            {
+                // Should be a vector with one value equal to zero
+                Vector2Int distTraveled = pos - arrayPos;
+                // Set distance to the non zero value of distTraveled
+                int distance = (distTraveled.x == 0) ? distTraveled.y : distTraveled.x;
+
+                // Set direction to distTraveled with the nonzero value equal to 1 or -1
+                Vector3Int direction = Vector3Int.RoundToInt(((Vector2)distTraveled).normalized);
+
+
+                // Place circle in every position from tile to clicked position
+                for (int i = 0; i < Mathf.Abs(distance); i++)
+                {
+                    //print($"adding tiles for direction {direction}");
+                    circles.Add(Instantiate(ghostPrefab, grid.CellToWorld((Vector3Int)pos + camMinGrid - direction * i), Quaternion.identity));
+                }
+            }
+            // Circle where originally clicked
             circles.Add(Instantiate(ghostPrefab, grid.CellToWorld((Vector3Int)arrayPos + camMinGrid), Quaternion.identity));
         }
     }

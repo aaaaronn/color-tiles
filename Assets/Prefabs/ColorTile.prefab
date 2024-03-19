@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 5086174801099965947}
   - component: {fileID: 8634674044419356495}
-  - component: {fileID: 1890400354731097574}
   - component: {fileID: 2525410276144527641}
   m_Layer: 0
   m_Name: ColorTile
@@ -86,19 +85,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &1890400354731097574
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3170786870680068}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 17c94624ab55f654f89ee760a7971646, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  colorIndex: 0
 --- !u!95 &2525410276144527641
 Animator:
   serializedVersion: 5
