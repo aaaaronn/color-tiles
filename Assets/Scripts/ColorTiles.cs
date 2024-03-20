@@ -9,19 +9,22 @@ public class ColorTiles : MonoBehaviour
 {
     [Header("General References")]
     [SerializeField] private Grid grid;
-    [SerializeField] private GameObject tile;
-    [SerializeField] private GameObject background;
+    [SerializeField] private GameObject tilePrefab;
+    [SerializeField] private GameObject backgroundPrefab;
+    [SerializeField] private GameObject ghostPrefab;
     [SerializeField] private Transform backgroundParent;
     [SerializeField] private Transform tilesParent;
     [SerializeField] private GameObject playButton;
+    [SerializeField] private GameObject endScreen;
     [SerializeField] private TMP_Text finalScoreText;
     [SerializeField] private TMP_Text gameplayScoreText;
 
-
+    // Click position handlers
     private Vector2 mousePos;
     private Vector3Int mousePosGrid;
     private Vector2Int arrayPos;
 
+    // Game Bounds
     private Camera cam;
     private Vector3Int camMinGrid;
     private Vector3Int camMaxGrid;
@@ -29,7 +32,7 @@ public class ColorTiles : MonoBehaviour
 
     [Header("Tile Data")]
     [SerializeField] private int tileCount = 200;
-    public GameObject[,] tiles;
+    private GameObject[,] tiles;
     private int[,] tileColors;
     [SerializeField] private Color[] colors;
 
@@ -44,8 +47,6 @@ public class ColorTiles : MonoBehaviour
     private int score = 0;
 
 
-    private List<GameObject> circles = new List<GameObject>();
-    [SerializeField] private GameObject ghostPrefab;
 
 
     // Start is called before the first frame update
@@ -69,7 +70,7 @@ public class ColorTiles : MonoBehaviour
             {
                 if ((x + y) % 2 == 0)
                 {
-                    Instantiate(background,
+                    Instantiate(backgroundPrefab,
                                 backgroundParent.TransformPoint(grid.CellToWorld(new Vector3Int(x + camMinGrid.x, y + camMinGrid.y, 0))),
                                 Quaternion.identity,
                                 backgroundParent);
@@ -118,15 +119,15 @@ public class ColorTiles : MonoBehaviour
         {
             currentTime -= Time.deltaTime;
             progressBar.fillAmount = currentTime / startingTime;
-        }
 
-        // Game end
-        if (currentTime <= 0)
-        {
-            doTimer = false;
-            finalScoreText.gameObject.SetActive(true);
-            finalScoreText.text = $"Score\n{score}";
-            currentTime = startingTime;
+            // Game end
+            if (currentTime <= 0)
+            {
+                doTimer = false;
+                endScreen.SetActive(true);
+                finalScoreText.text = $"Score\n{score}";
+                currentTime = startingTime;
+            }
         }
     }
 
@@ -159,7 +160,7 @@ public class ColorTiles : MonoBehaviour
                 {
                     currentTileCount--;
                     GameObject instObj =
-                        Instantiate(tile,
+                        Instantiate(tilePrefab,
                                     grid.CellToWorld(new Vector3Int(x + camMinGrid.x, y + camMinGrid.y, 0)),
                                     Quaternion.identity,
                                     tilesParent);
@@ -187,21 +188,6 @@ public class ColorTiles : MonoBehaviour
         currentTime = startingTime;
         doTimer = true;
         playButton.SetActive(false);
-    }
-
-    // Struct for each tile storing the gameobject, position in array, and color
-    struct GameTile
-    {
-        public int color;
-        public GameObject tile;
-        public Vector2Int arrayPos;
-
-        public GameTile(int color, GameObject tile, Vector2Int arrayPos)
-        {
-            this.color = color;
-            this.tile = tile;
-            this.arrayPos = arrayPos;
-        }
     }
 
     private Vector2Int CheckClick(Vector2Int pos, Vector2Int direction)
@@ -275,13 +261,17 @@ public class ColorTiles : MonoBehaviour
 
                 tile.GetComponent<SpriteRenderer>().sortingOrder = 1;
 
+                // 50/50 chance of flipping tile animation
                 if (Random.value > 0.5)
+                {
                     tile.transform.localRotation = Quaternion.Euler(0, 180, 0);
+                    tile.transform.position = new Vector2(tile.transform.position.x + tile.transform.localScale.x, tile.transform.position.y);
+                }
 
                 Animator anim = tile.GetComponent<Animator>();
 
                 anim.enabled = true;
-                anim.SetInteger("randAnim", Random.Range(0, 2));
+                anim.SetFloat("randTimeScale", Random.Range(0.9f, 1.1f));
 
 
                 Destroy(tile, 1.25f);
@@ -317,11 +307,11 @@ public class ColorTiles : MonoBehaviour
                 for (int i = 0; i < Mathf.Abs(distance); i++)
                 {
                     //print($"adding tiles for direction {direction}");
-                    circles.Add(Instantiate(ghostPrefab, grid.CellToWorld((Vector3Int)pos + camMinGrid - direction * i), Quaternion.identity));
+                    Instantiate(ghostPrefab, grid.CellToWorld((Vector3Int)pos + camMinGrid - direction * i), Quaternion.identity);
                 }
             }
             // Circle where originally clicked
-            circles.Add(Instantiate(ghostPrefab, grid.CellToWorld((Vector3Int)arrayPos + camMinGrid), Quaternion.identity));
+            Instantiate(ghostPrefab, grid.CellToWorld((Vector3Int)arrayPos + camMinGrid), Quaternion.identity);
         }
     }
 }

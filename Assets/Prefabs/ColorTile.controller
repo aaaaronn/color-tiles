@@ -72,13 +72,13 @@ AnimatorState:
   m_IKOnFeet: 0
   m_WriteDefaultValues: 1
   m_Mirror: 0
-  m_SpeedParameterActive: 0
+  m_SpeedParameterActive: 1
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
   m_Motion: {fileID: 7400000, guid: f8f70a89e1d73bf458db5e10818caae1, type: 2}
   m_Tag: 
-  m_SpeedParameter: New Float
+  m_SpeedParameter: randTimeScale
   m_MirrorParameter: flip
   m_CycleOffsetParameter: 
   m_TimeParameter: 
@@ -98,13 +98,13 @@ AnimatorState:
   m_IKOnFeet: 0
   m_WriteDefaultValues: 1
   m_Mirror: 0
-  m_SpeedParameterActive: 0
+  m_SpeedParameterActive: 1
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
   m_Motion: {fileID: 7400000, guid: 6f8260c425ef9b24bb87287a4c45daf6, type: 2}
   m_Tag: 
-  m_SpeedParameter: 
+  m_SpeedParameter: randTimeScale
   m_MirrorParameter: flip
   m_CycleOffsetParameter: 
   m_TimeParameter: 
@@ -120,6 +120,12 @@ AnimatorController:
   - m_Name: randAnim
     m_Type: 3
     m_DefaultFloat: 0
+    m_DefaultInt: 0
+    m_DefaultBool: 0
+    m_Controller: {fileID: 0}
+  - m_Name: randTimeScale
+    m_Type: 1
+    m_DefaultFloat: 1
     m_DefaultInt: 0
     m_DefaultBool: 0
     m_Controller: {fileID: 0}
