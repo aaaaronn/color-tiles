@@ -3,7 +3,6 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using static UnityEditor.PlayerSettings;
 
 public class ColorTiles : MonoBehaviour
 {
@@ -128,6 +127,11 @@ public class ColorTiles : MonoBehaviour
                 finalScoreText.text = $"Score\n{score}";
                 currentTime = startingTime;
             }
+        }
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Application.Quit();
         }
     }
 
@@ -271,7 +275,6 @@ public class ColorTiles : MonoBehaviour
                 Animator anim = tile.GetComponent<Animator>();
 
                 anim.enabled = true;
-                anim.SetFloat("randTimeScale", Random.Range(0.9f, 1.1f));
 
 
                 Destroy(tile, 1.25f);
