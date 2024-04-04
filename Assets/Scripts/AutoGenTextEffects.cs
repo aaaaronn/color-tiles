@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Tracing;
 using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
@@ -18,11 +19,14 @@ public class AutoGenTextEffects : MonoBehaviour
 
     private string sourceString;
     private TextMeshProUGUI meshText;
+    private string lastExitMarkup;
+    private int InitTextLength;
 
     void Start()
     {
         meshText = GetComponent<TextMeshProUGUI>();
         sourceString = meshText.text;
+        InitTextLength = sourceString.Length;
 
         if (doColorChange && colorArray.Length > 0)
         {
@@ -31,14 +35,11 @@ public class AutoGenTextEffects : MonoBehaviour
             int colorIndex = 0;
             for (int i = 0; i < length; i++)
             {
-                print(sourceString[currentStartIndex]);
                 if (sourceString[currentStartIndex] == ' ')
                 {
                     currentStartIndex++;
-                    colorIndex--;
                     continue;
                 }
-                print(sourceString[currentStartIndex]);
 
                 sourceString = sourceString.Insert(currentStartIndex + 1, "</color>").Insert(currentStartIndex, $"<color=#{ColorUtility.ToHtmlStringRGB(colorArray[colorIndex % colorArray.Length])}>");
 
@@ -47,6 +48,7 @@ public class AutoGenTextEffects : MonoBehaviour
                 colorIndex++;
             }
             meshText.text = sourceString;
+            lastExitMarkup = "</color>";
         }
     }
 
@@ -59,23 +61,24 @@ public class AutoGenTextEffects : MonoBehaviour
         }
     }
 
+    readonly int wiggleAmtInserted = "</voffset><voffset=-0.1234567px>".Length + 4;
     private void WiggleThings()
     {
         string newString = sourceString;
-        int currentStartIndex = 0;
+        int currentStartIndex = sourceString.IndexOf(lastExitMarkup);
 
-        for (int i = 0; i < sourceString.Length; i++)
+        for (int i = 0; i < InitTextLength - 1; i++)
         {
             // Calculate offset for current character
             float voffset = Mathf.Sin(Time.time * frequency + offsetAmt * i) * amplitude;
 
             // Replace 0 with proper voffset
-            newString = newString.Insert(currentStartIndex + 1, "</voffset>").Insert(currentStartIndex, "<voffset=" + voffset + "px>");
+            newString = newString.Insert(currentStartIndex, "</voffset>").Insert(currentStartIndex - 1, "<voffset=" + voffset + "px>");
 
             // Gets index of next character
-            currentStartIndex = newString.IndexOf("</voffset>", currentStartIndex) + 10;
+            if (i != InitTextLength - 2)
+                currentStartIndex = newString.IndexOf(lastExitMarkup, currentStartIndex + wiggleAmtInserted);
         }
-
         meshText.text = newString;
     }
 }

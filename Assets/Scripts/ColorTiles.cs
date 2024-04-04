@@ -16,6 +16,7 @@ public class ColorTiles : MonoBehaviour
     [SerializeField] private GameObject playButton;
     [SerializeField] private GameObject endScreen;
     [SerializeField] private TMP_Text finalScoreText;
+    [SerializeField] private TMP_Text highScoreText;
     [SerializeField] private TMP_Text gameplayScoreText;
 
     // Click position handlers
@@ -124,6 +125,13 @@ public class ColorTiles : MonoBehaviour
             {
                 doTimer = false;
                 endScreen.SetActive(true);
+                if (score > PlayerPrefs.GetInt("HighScore", 0))
+                {
+                    PlayerPrefs.SetInt("HighScore", score);
+                    highScoreText.text = $"New High Score!\nHigh Score: {PlayerPrefs.GetInt("HighScore")}";
+                }
+                else
+                    highScoreText.text = $"High Score: {PlayerPrefs.GetInt("HighScore", 0)}";
                 finalScoreText.text = $"Score\n{score}";
                 currentTime = startingTime;
             }
