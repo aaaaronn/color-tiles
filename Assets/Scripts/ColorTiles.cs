@@ -18,6 +18,7 @@ public class ColorTiles : MonoBehaviour
     [SerializeField] private TMP_Text finalScoreText;
     [SerializeField] private TMP_Text highScoreText;
     [SerializeField] private TMP_Text gameplayScoreText;
+    [SerializeField] private GameObject blur;
 
     // Click position handlers
     private Vector2 mousePos;
@@ -125,6 +126,7 @@ public class ColorTiles : MonoBehaviour
             {
                 doTimer = false;
                 endScreen.SetActive(true);
+                blur.SetActive(true);
                 if (score > PlayerPrefs.GetInt("HighScore", 0))
                 {
                     PlayerPrefs.SetInt("HighScore", score);
@@ -200,6 +202,7 @@ public class ColorTiles : MonoBehaviour
         currentTime = startingTime;
         doTimer = true;
         playButton.SetActive(false);
+        blur.SetActive(false);
     }
 
     private Vector2Int CheckClick(Vector2Int pos, Vector2Int direction)
