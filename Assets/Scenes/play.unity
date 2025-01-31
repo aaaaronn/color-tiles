@@ -38,7 +38,6 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -1658,7 +1657,7 @@ MonoBehaviour:
   - {r: 0.7960785, g: 0.4156863, b: 0.80392164, a: 1}
   - {r: 0.9921569, g: 0.5647059, b: 1, a: 1}
   progressBar: {fileID: 121178382}
-  startingTime: 5
+  startingTime: 90
   misclickTimeLoss: 5
   currentTime: 0
 --- !u!156049354 &1237112520

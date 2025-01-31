@@ -64,6 +64,10 @@ public class ColorTiles : MonoBehaviour
         dimensions.y = camMaxGrid.y - camMinGrid.y + 1;
         //print(dimensions);
 
+        tileCount = (int)((dimensions.x * dimensions.y) * 0.6f);
+        startingTime = tileCount / 2.5f;
+        print($"Tiles: {tileCount} Timer: {startingTime}");
+
         // checkerboard background pattern
         for (int x = -2; x <= dimensions.x + 1; x++)
         {
